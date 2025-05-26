@@ -25,6 +25,3 @@ jobs:
 
       - name: Run tail pattern scanner
         run: python main.py
-
-    
-
