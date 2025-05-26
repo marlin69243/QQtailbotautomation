@@ -25,3 +25,9 @@ jobs:
 
       - name: Run tail pattern scanner
         run: python main.py
+
+        ###
+        git add .github/workflows/daily-tail-scan.yml
+git commit -m "Add GitHub Actions workflow for daily run"
+git push
+
