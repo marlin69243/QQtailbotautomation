@@ -13,8 +13,13 @@ COMPARISON_DAYS = 180
 
 # --- TELEGRAM SETTINGS ---
 TELEGRAM_ENABLED = True
-BOT_TOKEN = "7525541823:AAGsWUJszjEe0tsttU_m6FFGH8ic_r4w59w"
-CHAT_ID = "732522207"
+import os
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    raise ValueError("Telegram credentials not set in environment variables")
 
 def send_telegram(message):
     if TELEGRAM_ENABLED:
