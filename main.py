@@ -295,6 +295,7 @@ def detect_weekly_topping_tails(data, ticker):
 
     return alerts
 
+
 # --- Main Execution ---
 def main():
     # Combine tickers, avoiding duplicates
@@ -302,45 +303,45 @@ def main():
     all_alerts = []
 
     for ticker in tickers:
-    print(f"Processing {ticker}...")
-    try:
-        # === DAILY DATA ===
-        data = yf.download(ticker, period="6mo", interval="1d", auto_adjust=True)
-        data = data.dropna()
+        print(f"Processing {ticker}...")
+        try:
+            # === DAILY DATA ===
+            data = yf.download(ticker, period="6mo", interval="1d", auto_adjust=True)
+            data = data.dropna()
 
-        if isinstance(data.columns, pd.MultiIndex):
-            data.columns = data.columns.get_level_values(0)
+            if isinstance(data.columns, pd.MultiIndex):
+                data.columns = data.columns.get_level_values(0)
 
-        if len(data) < (LOOKBACK_DAYS + 1):
-            print(f"❌ Not enough daily data for {ticker}. Skipping.")
+            if len(data) < (LOOKBACK_DAYS + 1):
+                print(f"❌ Not enough daily data for {ticker}. Skipping.")
+                continue
+
+            topping_alerts = detect_topping_tails(data, ticker)
+            bottoming_alerts = detect_bottoming_tails(data, ticker)
+            all_alerts.extend(topping_alerts + bottoming_alerts)
+
+            # === WEEKLY DATA ===
+            weekly_data = yf.download(ticker, period="1y", interval="1wk", auto_adjust=True)
+            weekly_data = weekly_data.dropna()
+
+            if isinstance(weekly_data.columns, pd.MultiIndex):
+                weekly_data.columns = weekly_data.columns.get_level_values(0)
+
+            weekly_topping_alerts = detect_weekly_topping_tails(weekly_data, ticker)
+            weekly_bottoming_alerts = detect_weekly_bottoming_tails(weekly_data, ticker)
+            all_alerts.extend(weekly_topping_alerts + weekly_bottoming_alerts)
+
+        except Exception as e:
+            print(f"❌ Error processing {ticker}: {e}")
             continue
 
-        topping_alerts = detect_topping_tails(data, ticker)
-        bottoming_alerts = detect_bottoming_tails(data, ticker)
-        all_alerts.extend(topping_alerts + bottoming_alerts)
-
-        # === WEEKLY DATA ===
-        weekly_data = yf.download(ticker, period="1y", interval="1wk", auto_adjust=True)
-        weekly_data = weekly_data.dropna()
-
-        if isinstance(weekly_data.columns, pd.MultiIndex):
-            weekly_data.columns = weekly_data.columns.get_level_values(0)
-
-        weekly_topping_alerts = detect_weekly_topping_tails(weekly_data, ticker)
-        weekly_bottoming_alerts = detect_weekly_bottoming_tails(weekly_data, ticker)
-        all_alerts.extend(weekly_topping_alerts + weekly_bottoming_alerts)
-
-    except Exception as e:
-        print(f"❌ Error processing {ticker}: {e}")
-        continue
-
-# === ALERT OUTPUT ===
-if all_alerts:
-    for alert in all_alerts:
-        print(alert)
-        send_telegram(alert)
-else:
-    print("No tail signals detected this year.")
+    # === ALERT OUTPUT ===
+    if all_alerts:
+        for alert in all_alerts:
+            print(alert)
+            send_telegram(alert)
+    else:
+        print("No tail signals detected this year.")
 
 
 if __name__ == "__main__":
