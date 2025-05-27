@@ -301,7 +301,7 @@ def main():
     tickers = list(set(get_nasdaq_100_tickers() + get_sp500_tickers() + get_other_tickers()))
     all_alerts = []
 
-for ticker in tickers:
+    for ticker in tickers:
     print(f"Processing {ticker}...")
     try:
         # === DAILY DATA ===
