@@ -200,6 +200,101 @@ def detect_topping_tails(data, ticker):
 
     return alerts
 
+def detect_weekly_bottoming_tails(data, ticker):
+    alerts = []
+    now = datetime.now()
+    one_year_ago = now - timedelta(days=LOOKBACK_DAYS)
+    six_months_ago = now - timedelta(days=COMPARISON_DAYS)
+
+    data['AvgVolume'] = data['Volume'].rolling(window=3).mean()
+    data['RSI'] = RSIIndicator(close=data['Close']).rsi()
+
+    for i in range(LOOKBACK_DAYS // 7, len(data)):
+        row = data.iloc[i]
+        past_data = data.loc[(data.index < row.name) & (data.index >= six_months_ago)]
+        if past_data.empty:
+            continue
+
+        o, h, l, c, v = row['Open'], row['High'], row['Low'], row['Close'], row['Volume']
+        body = abs(c - o)
+        if body < MIN_BODY_SIZE:
+            continue
+
+        avg_vol = row['AvgVolume']
+        if pd.notna(avg_vol) and v < VOLUME_MULTIPLIER * avg_vol:
+            continue
+
+        lower_wick = max(min(c, o) - l, 0)
+        upper_quarter = h - (h - l) * 0.25
+        close_near_high = c >= upper_quarter
+
+        if (
+            lower_wick > TAIL_RATIO_THRESHOLD * body and
+            close_near_high and
+            l < past_data['Low'].min() and
+            row.name >= one_year_ago
+        ):
+            range_ = h - l
+            entry = l + 0.4 * range_
+            stop_loss = entry * 0.91
+            take_profit = entry * 1.12
+
+            alert = (
+                f"📅 {row.name.date()}: Weekly Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f})\n"
+                f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
+            )
+            alerts.append(alert)
+
+    return alerts
+
+
+def detect_weekly_topping_tails(data, ticker):
+    alerts = []
+    now = datetime.now()
+    one_year_ago = now - timedelta(days=LOOKBACK_DAYS)
+    six_months_ago = now - timedelta(days=COMPARISON_DAYS)
+
+    data['AvgVolume'] = data['Volume'].rolling(window=3).mean()
+    data['RSI'] = RSIIndicator(close=data['Close']).rsi()
+
+    for i in range(LOOKBACK_DAYS // 7, len(data)):
+        row = data.iloc[i]
+        past_data = data.loc[(data.index < row.name) & (data.index >= six_months_ago)]
+        if past_data.empty:
+            continue
+
+        o, h, l, c, v = row['Open'], row['High'], row['Low'], row['Close'], row['Volume']
+        body = abs(c - o)
+        if body < MIN_BODY_SIZE:
+            continue
+
+        avg_vol = row['AvgVolume']
+        if pd.notna(avg_vol) and v < VOLUME_MULTIPLIER * avg_vol:
+            continue
+
+        upper_wick = max(h - max(c, o), 0)
+        lower_quarter = l + (h - l) * 0.25
+        close_near_low = c <= lower_quarter
+
+        if (
+            upper_wick > TAIL_RATIO_THRESHOLD * body and
+            close_near_low and
+            h > past_data['High'].max() and
+            row.name >= one_year_ago
+        ):
+            range_ = h - l
+            entry = h - 0.4 * range_
+            stop_loss = entry * 1.09
+            take_profit = entry * 0.88
+
+            alert = (
+                f"📅 {row.name.date()}: Weekly Topping Tail on {ticker} (RSI: {row['RSI']:.2f})\n"
+                f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
+            )
+            alerts.append(alert)
+
+    return alerts
+
 # --- Main Execution ---
 def main():
     # Combine tickers, avoiding duplicates
@@ -223,6 +318,19 @@ def main():
             bottoming_alerts = detect_bottoming_tails(data, ticker)
             all_alerts.extend(topping_alerts + bottoming_alerts)
 
+# 🔽 INSERT THIS BELOW TO ADD WEEKLY LOGIC 🔽
+    weekly_data = yf.download(ticker, period="1y", interval="1wk", auto_adjust=True)
+    weekly_data = weekly_data.dropna()
+
+    if isinstance(weekly_data.columns, pd.MultiIndex):
+        weekly_data.columns = weekly_data.columns.get_level_values(0)
+
+    weekly_topping_alerts = detect_weekly_topping_tails(weekly_data, ticker)
+    weekly_bottoming_alerts = detect_weekly_bottoming_tails(weekly_data, ticker)
+    all_alerts.extend(weekly_topping_alerts + weekly_bottoming_alerts)
+
+
+    
         except Exception as e:
             print(f"❌ Error processing {ticker}: {e}")
             continue
