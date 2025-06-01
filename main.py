@@ -149,16 +149,23 @@ def detect_bottoming_tails(data, ticker):
             stop_loss = entry * 0.91
             take_profit = entry * 1.12
 
-            # Check for MACD crossover above signal
-            macd_cross_msg = ""
+            # Check for MACD crossover and RSI conditions
+            macd_msg = ""
+            rsi_msg = ""
             if i > 0:
                 prev_macd = data['MACD_line'].iloc[i-1]
                 prev_signal = data['MACD_signal'].iloc[i-1]
                 if row['MACD_line'] > row['MACD_signal'] and prev_macd <= prev_signal:
-                    macd_cross_msg = " (MACD crossed above signal line)"
+                    macd_msg = "✅ MACD crossed above signal line."
+                else:
+                    macd_msg = "⚠️ No MACD bullish crossover."
+            if row['RSI'] < 30:
+                rsi_msg = "✅ RSI below 30."
+            else:
+                rsi_msg = "⚠️ No RSI below 30."
 
             alert = (
-                f"🔹 {row.name.date()}: Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
+                f"🔹 {row.name.date()}: Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f}) {macd_msg} {rsi_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
@@ -208,16 +215,23 @@ def detect_topping_tails(data, ticker):
             stop_loss = entry * 1.09
             take_profit = entry * 0.88
 
-            # Check for MACD crossover below signal
-            macd_cross_msg = ""
+            # Check for MACD crossover and RSI conditions
+            macd_msg = ""
+            rsi_msg = ""
             if i > 0:
                 prev_macd = data['MACD_line'].iloc[i-1]
                 prev_signal = data['MACD_signal'].iloc[i-1]
                 if row['MACD_line'] < row['MACD_signal'] and prev_macd >= prev_signal:
-                    macd_cross_msg = " (MACD crossed below signal line)"
+                    macd_msg = "❌ MACD crossed below signal line."
+                else:
+                    macd_msg = "⚠️ No MACD bearish crossover."
+            if row['RSI'] > 70:
+                rsi_msg = "❌ RSI above 70."
+            else:
+                rsi_msg = "⚠️ No RSI above 70."
 
             alert = (
-                f"🔻 {row.name.date()}: Topping Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
+                f"🔻 {row.name.date()}: Topping Tail on {ticker} (RSI: {row['RSI']:.2f}) {macd_msg} {rsi_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
@@ -267,16 +281,23 @@ def detect_weekly_bottoming_tails(data, ticker):
             stop_loss = entry * 0.91
             take_profit = entry * 1.12
 
-            # Check for MACD crossover above signal
-            macd_cross_msg = ""
+            # Check for MACD crossover and RSI conditions
+            macd_msg = ""
+            rsi_msg = ""
             if i > 0:
                 prev_macd = data['MACD_line'].iloc[i-1]
                 prev_signal = data['MACD_signal'].iloc[i-1]
                 if row['MACD_line'] > row['MACD_signal'] and prev_macd <= prev_signal:
-                    macd_cross_msg = " (MACD crossed above signal line)"
+                    macd_msg = "✅ MACD crossed above signal line."
+                else:
+                    macd_msg = "⚠️ No MACD bullish crossover."
+            if row['RSI'] < 30:
+                rsi_msg = "✅ RSI below 30."
+            else:
+                rsi_msg = "⚠️ No RSI below 30."
 
             alert = (
-                f"📅 {row.name.date()}: Weekly Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
+                f"📅 {row.name.date()}: Weekly Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f}) {macd_msg} {rsi_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
@@ -326,16 +347,23 @@ def detect_weekly_topping_tails(data, ticker):
             stop_loss = entry * 1.09
             take_profit = entry * 0.88
 
-            # Check for MACD crossover below signal
-            macd_cross_msg = ""
+            # Check for MACD crossover and RSI conditions
+            macd_msg = ""
+            rsi_msg = ""
             if i > 0:
                 prev_macd = data['MACD_line'].iloc[i-1]
                 prev_signal = data['MACD_signal'].iloc[i-1]
                 if row['MACD_line'] < row['MACD_signal'] and prev_macd >= prev_signal:
-                    macd_cross_msg = " (MACD crossed below signal line)"
+                    macd_msg = "❌ MACD crossed below signal line."
+                else:
+                    macd_msg = "⚠️ No MACD bearish crossover."
+            if row['RSI'] > 70:
+                rsi_msg = "❌ RSI above 70."
+            else:
+                rsi_msg = "⚠️ No RSI above 70."
 
             alert = (
-                f"📅 {row.name.date()}: Weekly Topping Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
+                f"📅 {row.name.date()}: Weekly Topping Tail on {ticker} (RSI: {row['RSI']:.2f}) {macd_msg} {rsi_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
@@ -381,7 +409,7 @@ def main():
             print(f"❌ Error processing {ticker}: {e}")
             continue
 
-    # === ALERT OUTPUT ===
+    # --- ALERT OUTPUT ---
     if all_alerts:
         for alert in all_alerts:
             print(alert)
