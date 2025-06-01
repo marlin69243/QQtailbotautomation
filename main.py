@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime, timedelta
 from ta.momentum import RSIIndicator
+from ta.trend import MACD  # Import MACD indicator
 
 # --- CONFIG ---
 TAIL_RATIO_THRESHOLD = 2
@@ -88,7 +89,6 @@ def get_sp500_tickers():
         "NWSA", "NWS", "FOX", "FOX"
     ]
 
-
 # --- Get Additional Tickers ---
 def get_other_tickers():
     return ["GNRC", "PTON", "DDOG", "DOCU", "ENPH", "FANG", "HAL", "TRMB", "MTCH", "T", "AA", "AEM",
@@ -114,6 +114,10 @@ def detect_bottoming_tails(data, ticker):
 
     data['AvgVolume'] = data['Volume'].rolling(window=5).mean()
     data['RSI'] = RSIIndicator(close=data['Close']).rsi()
+    # Compute MACD line and signal line for the data
+    macd_indicator = MACD(close=data['Close'])
+    data['MACD_line'] = macd_indicator.macd()
+    data['MACD_signal'] = macd_indicator.macd_signal()
 
     for i in range(LOOKBACK_DAYS, len(data)):
         row = data.iloc[i]
@@ -145,8 +149,16 @@ def detect_bottoming_tails(data, ticker):
             stop_loss = entry * 0.91
             take_profit = entry * 1.12
 
+            # Check for MACD crossover above signal
+            macd_cross_msg = ""
+            if i > 0:
+                prev_macd = data['MACD_line'].iloc[i-1]
+                prev_signal = data['MACD_signal'].iloc[i-1]
+                if row['MACD_line'] > row['MACD_signal'] and prev_macd <= prev_signal:
+                    macd_cross_msg = " (MACD crossed above signal line)"
+
             alert = (
-                f"🔹 {row.name.date()}: Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f})\n"
+                f"🔹 {row.name.date()}: Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
@@ -161,6 +173,10 @@ def detect_topping_tails(data, ticker):
 
     data['AvgVolume'] = data['Volume'].rolling(window=5).mean()
     data['RSI'] = RSIIndicator(close=data['Close']).rsi()
+    # Compute MACD line and signal line for the data
+    macd_indicator = MACD(close=data['Close'])
+    data['MACD_line'] = macd_indicator.macd()
+    data['MACD_signal'] = macd_indicator.macd_signal()
 
     for i in range(LOOKBACK_DAYS, len(data)):
         row = data.iloc[i]
@@ -192,8 +208,16 @@ def detect_topping_tails(data, ticker):
             stop_loss = entry * 1.09
             take_profit = entry * 0.88
 
+            # Check for MACD crossover below signal
+            macd_cross_msg = ""
+            if i > 0:
+                prev_macd = data['MACD_line'].iloc[i-1]
+                prev_signal = data['MACD_signal'].iloc[i-1]
+                if row['MACD_line'] < row['MACD_signal'] and prev_macd >= prev_signal:
+                    macd_cross_msg = " (MACD crossed below signal line)"
+
             alert = (
-                f"🔻 {row.name.date()}: Topping Tail on {ticker} (RSI: {row['RSI']:.2f})\n"
+                f"🔻 {row.name.date()}: Topping Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
@@ -208,6 +232,10 @@ def detect_weekly_bottoming_tails(data, ticker):
 
     data['AvgVolume'] = data['Volume'].rolling(window=3).mean()
     data['RSI'] = RSIIndicator(close=data['Close']).rsi()
+    # Compute MACD line and signal line for weekly data
+    macd_indicator = MACD(close=data['Close'])
+    data['MACD_line'] = macd_indicator.macd()
+    data['MACD_signal'] = macd_indicator.macd_signal()
 
     for i in range(LOOKBACK_DAYS // 7, len(data)):
         row = data.iloc[i]
@@ -239,14 +267,21 @@ def detect_weekly_bottoming_tails(data, ticker):
             stop_loss = entry * 0.91
             take_profit = entry * 1.12
 
+            # Check for MACD crossover above signal
+            macd_cross_msg = ""
+            if i > 0:
+                prev_macd = data['MACD_line'].iloc[i-1]
+                prev_signal = data['MACD_signal'].iloc[i-1]
+                if row['MACD_line'] > row['MACD_signal'] and prev_macd <= prev_signal:
+                    macd_cross_msg = " (MACD crossed above signal line)"
+
             alert = (
-                f"📅 {row.name.date()}: Weekly Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f})\n"
+                f"📅 {row.name.date()}: Weekly Bottoming Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
 
     return alerts
-
 
 def detect_weekly_topping_tails(data, ticker):
     alerts = []
@@ -256,6 +291,10 @@ def detect_weekly_topping_tails(data, ticker):
 
     data['AvgVolume'] = data['Volume'].rolling(window=3).mean()
     data['RSI'] = RSIIndicator(close=data['Close']).rsi()
+    # Compute MACD line and signal line for weekly data
+    macd_indicator = MACD(close=data['Close'])
+    data['MACD_line'] = macd_indicator.macd()
+    data['MACD_signal'] = macd_indicator.macd_signal()
 
     for i in range(LOOKBACK_DAYS // 7, len(data)):
         row = data.iloc[i]
@@ -287,14 +326,21 @@ def detect_weekly_topping_tails(data, ticker):
             stop_loss = entry * 1.09
             take_profit = entry * 0.88
 
+            # Check for MACD crossover below signal
+            macd_cross_msg = ""
+            if i > 0:
+                prev_macd = data['MACD_line'].iloc[i-1]
+                prev_signal = data['MACD_signal'].iloc[i-1]
+                if row['MACD_line'] < row['MACD_signal'] and prev_macd >= prev_signal:
+                    macd_cross_msg = " (MACD crossed below signal line)"
+
             alert = (
-                f"📅 {row.name.date()}: Weekly Topping Tail on {ticker} (RSI: {row['RSI']:.2f})\n"
+                f"📅 {row.name.date()}: Weekly Topping Tail on {ticker} (RSI: {row['RSI']:.2f}){macd_cross_msg}\n"
                 f"Entry: {entry:.2f}, Stop Loss: {stop_loss:.2f}, Take Profit: {take_profit:.2f}"
             )
             alerts.append(alert)
 
     return alerts
-
 
 # --- Main Execution ---
 def main():
@@ -342,7 +388,6 @@ def main():
             send_telegram(alert)
     else:
         print("No tail signals detected this year.")
-
 
 if __name__ == "__main__":
     main()
