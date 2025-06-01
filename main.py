@@ -222,11 +222,11 @@ def detect_topping_tails(data, ticker):
                 prev_macd = data['MACD_line'].iloc[i-1]
                 prev_signal = data['MACD_signal'].iloc[i-1]
                 if row['MACD_line'] < row['MACD_signal'] and prev_macd >= prev_signal:
-                    macd_msg = "❌ MACD crossed below signal line."
+                    macd_msg = "✅ MACD crossed below signal line."
                 else:
                     macd_msg = "⚠️ No MACD bearish crossover."
             if row['RSI'] > 70:
-                rsi_msg = "❌ RSI above 70."
+                rsi_msg = "✅ RSI above 70."
             else:
                 rsi_msg = "⚠️ No RSI above 70."
 
